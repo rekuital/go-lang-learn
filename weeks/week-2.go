@@ -7,7 +7,9 @@ import (
 	"strconv"
 )
 
-var temperatures = map[string]func(float64, bool) float64{
+type converter func(v float64, isReverse bool) float64
+
+var temperatures = map[string]converter{
 	"C": func(v float64, isReverse bool) float64 { return v },
 	"K": func(v float64, isReverse bool) float64 {
 		if isReverse {
@@ -25,7 +27,7 @@ var temperatures = map[string]func(float64, bool) float64{
 	},
 }
 
-var distances = map[string]func(float64, bool) float64{
+var distances = map[string]converter{
 	"km": func(v float64, isReverse bool) float64 { return v },
 	"m": func(v float64, isReverse bool) float64 {
 		if isReverse {
@@ -41,7 +43,7 @@ var distances = map[string]func(float64, bool) float64{
 	},
 }
 
-var dictionaries = [...]map[string]func(float64, bool) float64{
+var dictionaries = [...]map[string]converter{
 	temperatures,
 	distances,
 }
@@ -72,10 +74,10 @@ func ConvertUnit() {
 
 	toValue := convertTo(value, fromUnit, toUnit, dictionary)
 
-	fmt.Printf("%f%s = %f%s", value, fromUnit, toValue, toUnit)
+	fmt.Printf("%.2f %s = %.2f %s", value, fromUnit, toValue, toUnit)
 }
 
-func canConvert(from, to string) (map[string]func(float64, bool) float64, error) {
+func canConvert(from, to string) (map[string]converter, error) {
 	findFrom, findTo := false, false
 	for _, dictionary := range dictionaries {
 		_, fromOk := dictionary[from]
@@ -95,7 +97,7 @@ func canConvert(from, to string) (map[string]func(float64, bool) float64, error)
 	case findFrom && !findTo:
 		errText = "вы указали не существующую единицу перевода"
 	case !findFrom && findTo:
-		errText = "вы указали не существующу исходную единицу"
+		errText = "вы указали не существующую исходную единицу"
 	case !findFrom && !findTo:
 		errText = "указанные единицы измерения не существуют"
 	case findFrom && findTo:
@@ -105,7 +107,7 @@ func canConvert(from, to string) (map[string]func(float64, bool) float64, error)
 	return nil, errors.New(errText)
 }
 
-func convertTo(value float64, from, to string, dictionaries map[string]func(float64, bool) float64) float64 {
+func convertTo(value float64, from, to string, dictionaries map[string]converter) float64 {
 	value = dictionaries[from](value, true)
 
 	return dictionaries[to](value, false)
