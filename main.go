@@ -11,51 +11,59 @@ func main() {
 
 	if len(args) < 1 {
 		printHelp()
+
+		return
 	}
 
-	switch true {
-	case args[0] == "help":
+	switch args[0] {
+	case "help":
 		printHelp()
 
-	case args[0] == "guess-number":
+	case "guess-number":
 		weeks.GuessNumber()
 
-	case args[0] == "convert" && len(args) > 1 && args[1] == "list":
-		for _, item := range weeks.PrintConvertUnits() {
-			fmt.Println(item)
+	case "convert":
+		if len(args) > 1 && args[1] == "list" {
+			for _, item := range weeks.UnitLines() {
+				fmt.Println(item)
+			}
+		} else {
+			var convertData []string
+
+			if len(args) > 1 {
+				convertData = args[1:]
+			}
+
+			err := applyConverter(convertData)
+
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(2)
+			}
 		}
-
-	case args[0] == "convert":
-		var convertData []string
-
-		if len(args) > 1 {
-			convertData = args[1:]
-		}
-
-		applyConverter(&convertData)
 
 	default:
-		fmt.Println("Указана неверная команда: ", args)
+		fmt.Println("Указана неверная команда:", args)
 		os.Exit(2)
 	}
 }
 
-func applyConverter(args *[]string) {
+func applyConverter(args []string) error {
 	value, fromSymbol, toSymbol, err := weeks.ParseArgs(args)
 
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(2)
+		return err
 	}
 
 	convertValue, err := weeks.ConvertUnit(value, fromSymbol, toSymbol)
 
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(2)
+		return err
 	}
 
-	fmt.Printf("%.2f %s = %.2f %s", value, fromSymbol, convertValue, toSymbol)
+	fmt.Printf("%.2f %s = %.2f %s\n", value, fromSymbol, convertValue, toSymbol)
+
+	return nil
 }
 
 func printHelp() {
@@ -66,5 +74,4 @@ func printHelp() {
 		" - convert <значение> <из какой> <в какую> - Сконвертировать значение, например, convert 100 m km\n",
 		" - help - Посмотреть доступные команды",
 	)
-	os.Exit(0)
 }

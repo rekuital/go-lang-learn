@@ -12,6 +12,7 @@ type unit struct {
 	symbol   string
 	toBase   converter
 	fromBase converter
+	base     bool
 }
 
 var temperatures = []unit{
@@ -19,6 +20,7 @@ var temperatures = []unit{
 		symbol:   "C",
 		toBase:   func(v float64) float64 { return v },
 		fromBase: func(v float64) float64 { return v },
+		base:     true,
 	},
 	{
 		symbol:   "K",
@@ -37,6 +39,7 @@ var distances = []unit{
 		symbol:   "km",
 		toBase:   func(v float64) float64 { return v },
 		fromBase: func(v float64) float64 { return v },
+		base:     true,
 	},
 	{
 		symbol:   "m",
@@ -55,10 +58,10 @@ var dictionaries = [...][]unit{
 	distances,
 }
 
-func PrintConvertUnits() (result []string) {
+func UnitLines() (result []string) {
 	for _, d := range dictionaries {
 		for _, item := range d {
-			if d[0].symbol == item.symbol {
+			if item.base {
 				continue
 			}
 
@@ -69,18 +72,18 @@ func PrintConvertUnits() (result []string) {
 	return
 }
 
-func ParseArgs(args *[]string) (float64, string, string, error) {
-	if len(*args) != 3 {
+func ParseArgs(args []string) (float64, string, string, error) {
+	if len(args) != 3 {
 		return 0, "", "", errors.New("укажите аргументы вызова в следующем формате: <Значение> <Исходная ед. измерения> <Конечная ед. измерения>")
 	}
 
-	value, err := strconv.ParseFloat((*args)[0], 64)
+	value, err := strconv.ParseFloat(args[0], 64)
 
 	if err != nil {
-		return 0, "", "", errors.New("первый аргумент должен быть числом, дробное число должно быть указано через точку. Вы указали " + (*args)[0])
+		return 0, "", "", errors.New("первый аргумент должен быть числом, дробное число должно быть указано через точку. Вы указали " + args[0])
 	}
 
-	return value, (*args)[1], (*args)[2], nil
+	return value, args[1], args[2], nil
 }
 
 func ConvertUnit(value float64, fromSymbol, toSymbol string) (float64, error) {
@@ -128,5 +131,5 @@ func getUnits(from, to string) (unit, unit, error) {
 		errText = "указанные единицы измерения не совместимы"
 	}
 
-	return *new(unit), *new(unit), errors.New(errText)
+	return unit{}, unit{}, errors.New(errText)
 }
