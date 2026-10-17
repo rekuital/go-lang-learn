@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"go-lang-learn/weeks"
 	"os"
@@ -32,7 +31,7 @@ func main() {
 			err = applyConverter(args)
 		}
 	default:
-		err = errors.New(fmt.Sprintf("Указана неверная команда: %v", args))
+		err = fmt.Errorf("указана неверная команда: %v", args)
 	}
 
 	if err != nil {

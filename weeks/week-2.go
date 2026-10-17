@@ -73,22 +73,22 @@ var dictionaries = []family{
 }
 
 func DictionaryInfo() ([]string, error) {
-	var result = new([]string)
+	var result []string
 
 	for _, d := range dictionaries {
-		baseUnit, err := findBase(&d.units)
+		baseUnit, err := findBase(d.units)
 
 		if err != nil {
-			return *result, err
+			return result, err
 		}
 
-		*result = append(*result, fmt.Sprintf("%s (база: %s):", d.name, baseUnit.symbol))
+		result = append(result, fmt.Sprintf("%s (база: %s):", d.name, baseUnit.symbol))
 		for _, item := range d.units {
-			addUnitInfo(result, item, baseUnit, d.hasCoefficient)
+			addUnitInfo(&result, item, baseUnit, d.hasCoefficient)
 		}
 	}
 
-	return *result, nil
+	return result, nil
 }
 
 func addUnitInfo(result *[]string, item unit, baseUnit unit, hasCoefficient bool) {
@@ -98,13 +98,13 @@ func addUnitInfo(result *[]string, item unit, baseUnit unit, hasCoefficient bool
 		var coeffInfo string
 
 		if hasCoefficient {
-			coeffInfo = fmt.Sprintf("(коэффициент %f)", item.toBase(1))
+			coeffInfo = fmt.Sprintf("(коэффициент %g)", item.toBase(1))
 		} else {
 			coeffInfo = "(нет коэффициента: сдвиг)"
 		}
 
 		*result = append(*result, fmt.Sprintf(
-			"%s\t- 1 %s = %f %s\t\t%s",
+			"%s\t- 1 %s = %g %s\t\t%s",
 			item.symbol,
 			item.symbol,
 			item.toBase(1),
@@ -176,8 +176,8 @@ func getUnits(from, to string) (unit, unit, error) {
 	return unit{}, unit{}, errors.New(errText)
 }
 
-func findBase(units *[]unit) (unit, error) {
-	for _, item := range *units {
+func findBase(units []unit) (unit, error) {
+	for _, item := range units {
 		if item.base {
 			return item, nil
 		}
