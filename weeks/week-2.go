@@ -15,6 +15,12 @@ type unit struct {
 	base     bool
 }
 
+type family struct {
+	name           string
+	hasCoefficient bool
+	units          []unit
+}
+
 var temperatures = []unit{
 	{
 		symbol:   "C",
@@ -53,23 +59,59 @@ var distances = []unit{
 	},
 }
 
-var dictionaries = [...][]unit{
-	temperatures,
-	distances,
+var dictionaries = []family{
+	{
+		name:           "Температура",
+		hasCoefficient: false,
+		units:          temperatures,
+	},
+	{
+		name:           "Расстояние",
+		hasCoefficient: true,
+		units:          distances,
+	},
 }
 
-func UnitLines() (result []string) {
-	for _, d := range dictionaries {
-		for _, item := range d {
-			if item.base {
-				continue
-			}
+func DictionaryInfo() ([]string, error) {
+	var result = new([]string)
 
-			result = append(result, fmt.Sprintf("100 %s = %.2f%s", item.symbol, item.toBase(100), d[0].symbol))
+	for _, d := range dictionaries {
+		baseUnit, err := findBase(&d.units)
+
+		if err != nil {
+			return *result, err
+		}
+
+		*result = append(*result, fmt.Sprintf("%s (база: %s):", d.name, baseUnit.symbol))
+		for _, item := range d.units {
+			addUnitInfo(result, item, baseUnit, d.hasCoefficient)
 		}
 	}
 
-	return
+	return *result, nil
+}
+
+func addUnitInfo(result *[]string, item unit, baseUnit unit, hasCoefficient bool) {
+	if item.base {
+		*result = append(*result, fmt.Sprintf("%s\t- базовая", item.symbol))
+	} else {
+		var coeffInfo string
+
+		if hasCoefficient {
+			coeffInfo = fmt.Sprintf("(коэффициент %f)", item.toBase(1))
+		} else {
+			coeffInfo = "(нет коэффициента: сдвиг)"
+		}
+
+		*result = append(*result, fmt.Sprintf(
+			"%s\t- 1 %s = %f %s\t\t%s",
+			item.symbol,
+			item.symbol,
+			item.toBase(1),
+			baseUnit.symbol,
+			coeffInfo,
+		))
+	}
 }
 
 func ParseArgs(args []string) (float64, string, string, error) {
@@ -103,7 +145,7 @@ func getUnits(from, to string) (unit, unit, error) {
 	for _, dictionary := range dictionaries {
 		mapUnits := map[string]unit{}
 
-		for _, item := range dictionary {
+		for _, item := range dictionary.units {
 			mapUnits[item.symbol] = item
 		}
 
@@ -132,4 +174,14 @@ func getUnits(from, to string) (unit, unit, error) {
 	}
 
 	return unit{}, unit{}, errors.New(errText)
+}
+
+func findBase(units *[]unit) (unit, error) {
+	for _, item := range *units {
+		if item.base {
+			return item, nil
+		}
+	}
+
+	return unit{}, errors.New("не удалось найти базовую единицу")
 }

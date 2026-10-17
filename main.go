@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"go-lang-learn/weeks"
 	"os"
 )
 
 func main() {
+	var err error
+
 	args := os.Args[1:]
 
 	if len(args) < 1 {
@@ -24,31 +27,25 @@ func main() {
 
 	case "convert":
 		if len(args) > 1 && args[1] == "list" {
-			for _, item := range weeks.UnitLines() {
-				fmt.Println(item)
-			}
+			err = printUnits()
 		} else {
-			var convertData []string
-
-			if len(args) > 1 {
-				convertData = args[1:]
-			}
-
-			err := applyConverter(convertData)
-
-			if err != nil {
-				fmt.Println(err.Error())
-				os.Exit(2)
-			}
+			err = applyConverter(args)
 		}
-
 	default:
-		fmt.Println("Указана неверная команда:", args)
+		err = errors.New(fmt.Sprintf("Указана неверная команда: %v", args))
+	}
+
+	if err != nil {
+		fmt.Println(err.Error())
 		os.Exit(2)
 	}
 }
 
 func applyConverter(args []string) error {
+	if len(args) > 1 {
+		args = args[1:]
+	}
+
 	value, fromSymbol, toSymbol, err := weeks.ParseArgs(args)
 
 	if err != nil {
@@ -62,6 +59,20 @@ func applyConverter(args []string) error {
 	}
 
 	fmt.Printf("%.2f %s = %.2f %s\n", value, fromSymbol, convertValue, toSymbol)
+
+	return nil
+}
+
+func printUnits() error {
+	lines, err := weeks.DictionaryInfo()
+
+	if err != nil {
+		return err
+	}
+
+	for _, line := range lines {
+		fmt.Println(line)
+	}
 
 	return nil
 }
